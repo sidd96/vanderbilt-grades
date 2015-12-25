@@ -30,32 +30,35 @@ formData = {
 	"submit" : "LOGIN"
 }
 
-blackboardSession = requests.Session()
-headers = {"User-Agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36"}
-blackboardSession.headers.update(headers)
-loginResponse = blackboardSession.post(formUrl, data = formData)
+with requests.Session() as blackboardSession:
+	headers = {"User-Agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36"}
+	blackboardSession.headers.update(headers)
+	loginResponse = blackboardSession.post(formUrl, data = formData)
 
-gradesData = {
-	"cmd" : "loadStream",
-	"streamName" : "mygrades",
-	"providers" : {},
-	"forOverview" : False
-}
-gradesResponse = json.loads(blackboardSession.post("https://blackboard.vanderbilt.edu/webapps/streamViewer/streamViewer", data = gradesData).text)
+	yesResponse = blackboardSession.get("https://webapp.mis.vanderbilt.edu/student-search/Entry.action").text
 
-if len(gradesResponse["sv_extras"]["sx_filters"]) == 0:
-	raise Exception("Error fetching grades")
+	gradesData = {
+		"cmd" : "loadStream",
+		"streamName" : "mygrades",
+		"providers" : {},
+		"forOverview" : False
+	}
+	gradesResponse = json.loads(blackboardSession.post("https://blackboard.vanderbilt.edu/webapps/streamViewer/streamViewer", data = gradesData).text)
+
+	print (len(gradesResponse["sv_extras"]["sx_filters"]))
+	if len(gradesResponse["sv_extras"]["sx_filters"]) == 0:
+		raise Exception("Error fetching grades")
 
 
-courses = {}
-for courseID, courseName in gradesResponse["sv_extras"]["sx_filters"][0]["choices"].items():
-	if currentSem(courseName):
-		courses[courseID] = courseName
+	courses = {}
+	for courseID, courseName in gradesResponse["sv_extras"]["sx_filters"][0]["choices"].items():
+		if currentSem(courseName):
+			courses[courseID] = courseName
 
-print (courses)
+	print (courses)
 
-for courseID, courseName in courses:
-	courseGrade = blackboardSession.get(GRADES_URL % courseID)
+	for courseID, courseName in courses.items():
+		courseGrade = blackboardSession.get(GRADES_URL % courseID)
 
-blackboardSession.close()
+print ("Done")
 
