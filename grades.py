@@ -1,16 +1,41 @@
 import requests, bs4
 import json
 
-
-#Constant
+'''
+	These are all of the urls used in getting the grades
+'''
+LOGIN_URL = "https://blackboard.vanderbilt.edu/webapps/bb-auth-provider-cas-BBLEARN/execute/casLogin?cmd=login&authProviderId=_122_1&redirectUrl=https%3A%2F%2Fblackboard.vanderbilt.edu%2Fwebapps%2Fportal%2Fframeset.jsp"
 GRADES_URL = "https://blackboard.vanderbilt.edu/webapps/bb-mygrades-BBLEARN/myGrades?course_id=%s&stream_name=mygrades"
+STREAM_URL = "https://blackboard.vanderbilt.edu/webapps/streamViewer/streamViewer"
 
-def currentSem(course) :
+
+'''
+	Checks to see if the course is part of the current semester
+	@param: the course text from the courses dictionary
+	@return: boolean if course is in current sem or not
+'''
+def currentSem(course):
 	if "2015" in course and "FALL" in course:
 		return True
 	return False
 
-loginPage = requests.get("https://blackboard.vanderbilt.edu/webapps/bb-auth-provider-cas-BBLEARN/execute/casLogin?cmd=login&authProviderId=_122_1&redirectUrl=https%3A%2F%2Fblackboard.vanderbilt.edu%2Fwebapps%2Fportal%2Fframeset.jsp")
+'''
+	Gets all the grades for the course provided in the past month
+	@param: the course to get grades from
+	@return: a dictionary of the formatted grades in the following style
+
+				{
+					COURSE NAME : {
+									ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+									ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+									etc...
+									}
+				}
+'''
+def getCourseGrades(course):
+	soup = bs4.BeautifulSoup(course.text, "html-parser")
+
+loginPage = requests.get(LOGIN_URL)
 loginPage.raise_for_status()
 
 
@@ -35,7 +60,7 @@ with requests.Session() as blackboardSession:
 	blackboardSession.headers.update(headers)
 	loginResponse = blackboardSession.post(formUrl, data = formData)
 
-	yesResponse = blackboardSession.get("https://webapp.mis.vanderbilt.edu/student-search/Entry.action").text
+	#yesResponse = blackboardSession.get("https://webapp.mis.vanderbilt.edu/student-search/Entry.action").text
 
 	gradesData = {
 		"cmd" : "loadStream",
@@ -43,9 +68,9 @@ with requests.Session() as blackboardSession:
 		"providers" : {},
 		"forOverview" : False
 	}
-	gradesResponse = json.loads(blackboardSession.post("https://blackboard.vanderbilt.edu/webapps/streamViewer/streamViewer", data = gradesData).text)
+	gradesResponse = json.loads(blackboardSession.post(STREAM_URL, data = gradesData).text)
 
-	print (len(gradesResponse["sv_extras"]["sx_filters"]))
+	
 	if len(gradesResponse["sv_extras"]["sx_filters"]) == 0:
 		raise Exception("Error fetching grades")
 
@@ -55,10 +80,11 @@ with requests.Session() as blackboardSession:
 		if currentSem(courseName):
 			courses[courseID] = courseName
 
-	print (courses)
 
+	print (courses)
 	for courseID, courseName in courses.items():
 		courseGrade = blackboardSession.get(GRADES_URL % courseID)
+		courseGradeDict getCourseGrades(courseGrade) #should return a dictionary of the course grades
 
 print ("Done")
 
