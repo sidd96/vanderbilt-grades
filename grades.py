@@ -23,11 +23,11 @@ def currentSem(course):
 	@param: the course to get grades from
 	@return: a dictionary of the formatted grades in the following style
 
-				{
-					ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
-					ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
-					etc...
-				}
+			{
+				ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+				ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+				etc...
+			}
 '''
 def getCourseGrades(course):
 	soup = bs4.BeautifulSoup(course.text, "html.parser")
