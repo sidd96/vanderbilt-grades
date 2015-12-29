@@ -8,7 +8,6 @@ LOGIN_URL = "https://blackboard.vanderbilt.edu/webapps/bb-auth-provider-cas-BBLE
 GRADES_URL = "https://blackboard.vanderbilt.edu/webapps/bb-mygrades-BBLEARN/myGrades?course_id=%s&stream_name=mygrades"
 STREAM_URL = "https://blackboard.vanderbilt.edu/webapps/streamViewer/streamViewer"
 
-
 '''
 	Checks to see if the course is part of the current semester
 	@param: the course text from the courses dictionary
@@ -25,15 +24,42 @@ def currentSem(course):
 	@return: a dictionary of the formatted grades in the following style
 
 				{
-					COURSE NAME : {
-									ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
-									ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
-									etc...
-									}
+					ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+					ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+					etc...
 				}
 '''
 def getCourseGrades(course):
-	soup = bs4.BeautifulSoup(course.text, "html-parser")
+	soup = bs4.BeautifulSoup(course.text, "html.parser")
+	gradesWrapper = soup.select(".sortable_item_row.graded_item_row.row.expanded")
+	gradesDict = {}
+	for item in gradesWrapper:
+		item.encode("utf-8")
+		#print ("\n")
+		assignmentGrade = item.select(".cell.grade")
+		assignmentName = item.select(".cell.gradable")
+		assignmentDueDate = assignmentName[0].select(".activityType")
+		assignmentUpdate = item.select(".cell.activity.timestamp")
+
+		if len(assignmentUpdate[0].select(".activityType")) != 0:
+			assignmentUpdate[0].select(".activityType")[0].extract()
+
+		if len(assignmentName[0].select(".itemCat")) != 0:
+			assignmentName[0].select(".itemCat")[0].extract()
+
+		if len(assignmentDueDate) != 0:
+			assignmentDueDate[0].extract();
+			assignmentDueDate[0] = assignmentDueDate[0].getText().strip()
+		else:
+			assignmentDueDate.append("None")
+
+		#print (assignmentName[0].getText().strip()  + assignmentGrade[0].getText() + "Last updated: " + assignmentUpdate[0].getText() + "\n")
+		
+		assignmentList = [assignmentGrade[0].getText(), assignmentDueDate[0], assignmentUpdate[0].getText()]
+		gradesDict[assignmentName[0].getText().strip()] = assignmentList
+
+	return gradesDict
+
 
 loginPage = requests.get(LOGIN_URL)
 loginPage.raise_for_status()
@@ -80,11 +106,17 @@ with requests.Session() as blackboardSession:
 		if currentSem(courseName):
 			courses[courseID] = courseName
 
-
-	print (courses)
 	for courseID, courseName in courses.items():
 		courseGrade = blackboardSession.get(GRADES_URL % courseID)
-		courseGradeDict getCourseGrades(courseGrade) #should return a dictionary of the course grades
+		courseGradeDict = getCourseGrades(courseGrade) #should return a dictionary of the course grades
+		print (len(courseGradeDict))
+		print (str(courseName) + "\n")
+		for assignment, assignmentValues in  courseGradeDict.items():
+			print (str(assignment.strip("\t\n")))
+			print ("Grade: " + assignmentValues[0].strip("\t\n"))
+			print ("Due Date: " + assignmentValues[1].strip("\t\n"))
+			print ("Last Updated: " + assignmentValues[2].strip("\t\n") + "\n")
+
 
 print ("Done")
 
