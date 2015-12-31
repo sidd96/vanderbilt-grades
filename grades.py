@@ -1,12 +1,17 @@
 import requests, bs4
 import json
+import getpass
 
 '''
-	These are all of the urls used in getting the grades
+	These are all of the constants used in getting the grades
+	The first three are urls, and the queries field is the maximum
+	number of tries the program should try and fetch the grades if an
+	error ocurred in fetching them
 '''
 LOGIN_URL = "https://blackboard.vanderbilt.edu/webapps/bb-auth-provider-cas-BBLEARN/execute/casLogin?cmd=login&authProviderId=_122_1&redirectUrl=https%3A%2F%2Fblackboard.vanderbilt.edu%2Fwebapps%2Fportal%2Fframeset.jsp"
 GRADES_URL = "https://blackboard.vanderbilt.edu/webapps/bb-mygrades-BBLEARN/myGrades?course_id=%s&stream_name=mygrades"
 STREAM_URL = "https://blackboard.vanderbilt.edu/webapps/streamViewer/streamViewer"
+MAX_QUERIES = 3
 
 '''
 	Checks to see if the course is part of the current semester
@@ -60,6 +65,15 @@ def getCourseGrades(course):
 
 	return gradesDict
 
+'''
+	This function returns a boolean of True if the grades were
+	not found and False if they were
+	@param: The response from the server
+	@return: boolean of grades found or not
+'''
+def gradesNotFound(gradesData):
+	return (len(gradesResponse["sv_extras"]["sx_filters"]) == 0)
+
 
 loginPage = requests.get(LOGIN_URL)
 loginPage.raise_for_status()
@@ -73,9 +87,11 @@ ltValue = hiddenField[3].attrs.get("value")
 
 formUrl = "https://login.mis.vanderbilt.edu" + str(actionUrl)
 
+vunetUsername = input("Vunet username: ");
+vunetPassword = getpass.getpass("Vunet password: ", stream = None)
 formData = {
-	"username" : "", #username for blackboard
-	"password" : "", #password for blackboard
+	"username" : vunetUsername, #username for blackboard
+	"password" : vunetPassword, #password for blackboard
 	"lt" : ltValue,
 	"_eventId" : "submit",
 	"submit" : "LOGIN"
@@ -96,8 +112,13 @@ with requests.Session() as blackboardSession:
 	}
 	gradesResponse = json.loads(blackboardSession.post(STREAM_URL, data = gradesData).text)
 
-	
-	if len(gradesResponse["sv_extras"]["sx_filters"]) == 0:
+	#Check if the grades were found otherwise try again until found or until
+	#max queries limit is hit
+	if gradesNotFound(gradesResponse):
+		for i in range(MAX_QUERIES):
+			if not gradesNotFound(gradesResponse):
+				break
+			gradesResponse = json.loads(blackboardSession.post(STREAM_URL, data = gradesData).text)
 		raise Exception("Error fetching grades")
 
 
@@ -109,7 +130,7 @@ with requests.Session() as blackboardSession:
 	for courseID, courseName in courses.items():
 		courseGrade = blackboardSession.get(GRADES_URL % courseID)
 		courseGradeDict = getCourseGrades(courseGrade) #should return a dictionary of the course grades
-		print (len(courseGradeDict))
+		print (str(len(courseGradeDict)) + " grades found for...")
 		print (str(courseName) + "\n")
 		for assignment, assignmentValues in  courseGradeDict.items():
 			print (str(assignment.strip("\t\n")))
