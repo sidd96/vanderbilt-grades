@@ -55,7 +55,6 @@ def getCourseGrades(course):
 	gradesDict = {}
 	for item in gradesWrapper:
 		item.encode("utf-8")
-		#print ("\n")
 		assignmentGrade = item.select(".cell.grade")
 		assignmentName = item.select(".cell.gradable")
 		assignmentDueDate = assignmentName[0].select(".activityType")
@@ -73,8 +72,6 @@ def getCourseGrades(course):
 		else:
 			assignmentDueDate.append("None")
 
-		#print (assignmentName[0].getText().strip()  + assignmentGrade[0].getText() + "Last updated: " + assignmentUpdate[0].getText() + "\n")
-		
 		assignmentList = [assignmentGrade[0].getText(), assignmentDueDate[0], assignmentUpdate[0].getText()]
 		gradesDict[assignmentName[0].getText().strip()] = assignmentList
 
@@ -145,14 +142,16 @@ with requests.Session() as blackboardSession:
 	}
 	gradesResponse = json.loads(blackboardSession.post(STREAM_URL, data = gradesData).text)
 
-	#Check if the grades were found otherwise try again until found or until
-	#max queries limit is hit
+	'''
+		Check if the grades were found otherwise try again until found or until
+		max queries limit is hit
+	'''
 	if gradesNotFound(gradesResponse):
 		for i in range(MAX_QUERIES):
 			if not gradesNotFound(gradesResponse):
 				break
 			gradesResponse = json.loads(blackboardSession.post(STREAM_URL, data = gradesData).text)
-		raise Exception("Error fetching grades")
+		raise Exception("Error fetching grades.\nPlease make sure that the username and password entered is correct.")
 
 
 	courses = {}
