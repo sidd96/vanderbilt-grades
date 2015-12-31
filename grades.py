@@ -14,6 +14,21 @@ STREAM_URL = "https://blackboard.vanderbilt.edu/webapps/streamViewer/streamViewe
 MAX_QUERIES = 3
 
 '''
+	This is a class used for easy text formatting in the terminal
+'''
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
+'''
 	Checks to see if the course is part of the current semester
 	@param: the course text from the courses dictionary
 	@return: boolean if course is in current sem or not
@@ -151,7 +166,7 @@ with requests.Session() as blackboardSession:
 		print (str(len(courseGradeDict)) + " grades found for...")
 		print (str(courseName) + "\n")
 		for assignment, assignmentValues in  courseGradeDict.items():
-			print (str(assignment.strip("\t\n")))
+			print (color.BOLD + str(assignment.strip("\t\n")) + color.END)
 			print ("Grade: " + assignmentValues[0].strip("\t\n"))
 			print ("Due Date: " + assignmentValues[1].strip("\t\n"))
 			print ("Last Updated: " + assignmentValues[2].strip("\t\n") + "\n")
