@@ -66,6 +66,26 @@ def getCourseGrades(course):
 	return gradesDict
 
 '''
+	This function gets the formurl used to create the POST request
+	in the blackboardSession
+	@param: the soup object to parse
+	@return: a formatted Url for the form
+'''
+def getFormUrl(soup):
+	form = soup.select("#fm1")
+	actionUrl = form[0].attrs.get("action")
+	return "https://login.mis.vanderbilt.edu" + str(actionUrl)
+
+'''
+	This function gets the hidden field value for the form
+	@param: soup object to parse
+	@return: the hidden field 
+'''
+def getHiddenField(soup):
+	hiddenField = soup.select("input[name]")
+	return hiddenField[3].attrs.get("value")
+
+'''
 	This function returns a boolean of True if the grades were
 	not found and False if they were
 	@param: The response from the server
@@ -80,15 +100,13 @@ loginPage.raise_for_status()
 
 
 soup = bs4.BeautifulSoup(loginPage.text, "html.parser")
-form = soup.select("#fm1")
-actionUrl = form[0].attrs.get("action")
-hiddenField = soup.select("input[name]")
-ltValue = hiddenField[3].attrs.get("value")
 
-formUrl = "https://login.mis.vanderbilt.edu" + str(actionUrl)
+ltValue = getHiddenField(soup)
+formUrl = getFormUrl(soup)
 
 vunetUsername = input("Vunet username: ");
 vunetPassword = getpass.getpass("Vunet password: ", stream = None)
+
 formData = {
 	"username" : vunetUsername, #username for blackboard
 	"password" : vunetPassword, #password for blackboard
