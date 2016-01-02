@@ -34,25 +34,25 @@ class color:
 	@return: boolean if course is in current sem or not
 '''
 def currentSem(course):
-	if "2015" in course and "FALL" in course:
+	if "2015" in course and "SPR" in course:
 		return True
 	return False
 
 '''
 	Gets all the grades for the course provided in the past month
 	@param: the course to get grades from
-	@return: a dictionary of the formatted grades in the following style
+	@return: a list of the formatted grades in the following style
 
-			{
-				ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
-				ASSIGNMENT : [GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+			[
+				[ASSIGNMENT, GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
+				[ASSIGNMENT, GRADE, DATE DUE, DATE UPDATED, COMMENT (If included)],
 				etc...
-			}
+			]
 '''
 def getCourseGrades(course):
 	soup = bs4.BeautifulSoup(course.text, "html.parser")
 	gradesWrapper = soup.select(".sortable_item_row.graded_item_row.row.expanded")
-	gradesDict = {}
+	gradesList = []
 	for item in gradesWrapper:
 		item.encode("utf-8")
 		assignmentGrade = item.select(".cell.grade")
@@ -72,10 +72,10 @@ def getCourseGrades(course):
 		else:
 			assignmentDueDate.append("None")
 
-		assignmentList = [assignmentGrade[0].getText(), assignmentDueDate[0], assignmentUpdate[0].getText()]
-		gradesDict[assignmentName[0].getText().strip()] = assignmentList
+		assignmentList = [assignmentName[0].getText().strip(), assignmentGrade[0].getText(), assignmentDueDate[0], assignmentUpdate[0].getText()]
+		gradesList.append(assignmentList)
 
-	return gradesDict
+	return gradesList
 
 '''
 	This function gets the formurl used to create the POST request
@@ -159,16 +159,18 @@ with requests.Session() as blackboardSession:
 		if currentSem(courseName):
 			courses[courseID] = courseName
 
+	print (courses)
+
 	for courseID, courseName in courses.items():
 		courseGrade = blackboardSession.get(GRADES_URL % courseID)
-		courseGradeDict = getCourseGrades(courseGrade) #should return a dictionary of the course grades
-		print (str(len(courseGradeDict)) + " grades found for...")
+		courseGradeList = getCourseGrades(courseGrade) #should return a dictionary of the course grades
+		print (str(len(courseGradeList)) + " grades found for...")
 		print (str(courseName) + "\n")
-		for assignment, assignmentValues in  courseGradeDict.items():
-			print (color.BOLD + str(assignment.strip("\t\n")) + color.END)
-			print ("Grade: " + assignmentValues[0].strip("\t\n"))
-			print ("Due Date: " + assignmentValues[1].strip("\t\n"))
-			print ("Last Updated: " + assignmentValues[2].strip("\t\n") + "\n")
+		for assignment in  courseGradeList:
+			print (color.BOLD + str(assignment[0].strip("\t\n")) + color.END)
+			print ("Grade: " + assignment[1].strip("\t\n"))
+			print ("Due Date: " + assignment[2].strip("\t\n"))
+			print ("Last Updated: " + assignment[3].strip("\t\n") + "\n")
 
 
 print ("Done")
