@@ -1,6 +1,6 @@
 import requests, bs4
 import json
-import getpass
+import getpass, os
 
 '''
 	These are all of the constants used in getting the grades
@@ -107,6 +107,8 @@ def gradesNotFound(gradesData):
 	return (len(gradesResponse["sv_extras"]["sx_filters"]) == 0)
 
 
+os.system("cls" if os.name == "nt" else "clear")
+
 loginPage = requests.get(LOGIN_URL)
 loginPage.raise_for_status()
 
@@ -131,7 +133,7 @@ with requests.Session() as blackboardSession:
 	headers = {"User-Agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36"}
 	blackboardSession.headers.update(headers)
 	loginResponse = blackboardSession.post(formUrl, data = formData)
-
+	print (loginResponse.status_code)
 	#yesResponse = blackboardSession.get("https://webapp.mis.vanderbilt.edu/student-search/Entry.action").text
 
 	gradesData = {
