@@ -34,7 +34,7 @@ class color:
 	@return: boolean if course is in current sem or not
 '''
 def currentSem(course):
-	if "2015" in course and "SPR" in course:
+	if "2016" in course and "SPR" in course:
 		return True
 	return False
 
@@ -133,7 +133,6 @@ with requests.Session() as blackboardSession:
 	headers = {"User-Agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36"}
 	blackboardSession.headers.update(headers)
 	loginResponse = blackboardSession.post(formUrl, data = formData)
-	print (loginResponse.status_code)
 	#yesResponse = blackboardSession.get("https://webapp.mis.vanderbilt.edu/student-search/Entry.action").text
 
 	gradesData = {
@@ -161,7 +160,6 @@ with requests.Session() as blackboardSession:
 		if currentSem(courseName):
 			courses[courseID] = courseName
 
-	print (courses)
 
 	for courseID, courseName in courses.items():
 		courseGrade = blackboardSession.get(GRADES_URL % courseID)
